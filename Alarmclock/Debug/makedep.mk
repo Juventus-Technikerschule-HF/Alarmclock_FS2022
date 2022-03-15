@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+ButtonHandler.c
+
 driver\clksys_driver.c
 
 driver\pmic_driver.c
@@ -37,8 +39,6 @@ main.c
 mem_check.c
 
 NHD0420Driver.c
-
-rtos_buttonhandler.c
 
 utils.c
 

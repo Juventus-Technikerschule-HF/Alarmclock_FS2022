@@ -24,7 +24,7 @@
 #include "utils.h"
 #include "errorHandler.h"
 #include "NHD0420Driver.h"
-#include "rtos_buttonhandler.h"
+#include "ButtonHandler.h"
 
 
 void vLedBlink(void *pvParameters);
@@ -32,6 +32,10 @@ void vTime(void *pvParameters);
 void vButtonTask(void *pvParameters);
 void vInterfaceTask(void *pvParameters);
 
+#define MODE_SHOWTIME		0x00
+#define MODE_SETTIME		0x01
+#define MODE_SETALARM		0x02
+#define MODE_ALARMACTIVE	0x03
 
 //Eventgroup and Defines for Alarmclock
 #define ALARMCLOCK_COUNT1SECOND		0x01 << 0
@@ -42,6 +46,10 @@ EventGroupHandle_t egAlarmClock;
 uint8_t seconds = 0;
 uint8_t minutes = 0;
 uint8_t hours = 0;
+
+uint8_t alarm_seconds = 0;
+uint8_t alarm_minutes = 0;
+uint8_t alarm_hours = 0;
 
 
 int main(void)
@@ -64,48 +72,70 @@ int main(void)
 	return 0;
 }
 
+
 void vInterfaceTask(void *pvParameters) {
-	
+	int mode = MODE_SHOWTIME;
 	for(;;) {
+		switch(mode) {
+			case MODE_SHOWTIME:
+				vDisplayClear();
+				vDisplayWriteStringAtPos(0,0,"Time:   %d:%d:%d", hours, minutes, seconds);
+				vDisplayWriteStringAtPos(1,0,"Alarm:  %d:%d:%d", alarm_hours, alarm_minutes, alarm_seconds);
+				vDisplayWriteStringAtPos(3,0,"Set-T Set-A EN-A --");
+			break;
+			case MODE_SETTIME:
+
+			break;
+			case MODE_SETALARM:
+
+			break;
+			case MODE_ALARMACTIVE:
+
+			break;
+			default:
+
+			break;
+		}
+		
 		if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_TESTBUTTONPRESS)  == ALARMCLOCK_TESTBUTTONPRESS) {
 			//Ausgabe der Zeit wenn die Taste 1 gedrückt wird. Dies ist nur ein Beispiel für die Anwendung der EventGroup
 			vDisplayClear();
 			vDisplayWriteStringAtPos(0,0,"Time: %d:%d:%d", hours, minutes, seconds);
 			xEventGroupClearBits(egAlarmClock, ALARMCLOCK_TESTBUTTONPRESS);
 		}
+		
+		vTaskDelay(200/portTICK_RATE_MS);
 	}
 }
 
 void vButtonTask(void * pvParameters) {
-	initButtonHandler();
-	setupButton(BUTTON1, &PORTF, 4, 1);
-	setupButton(BUTTON2, &PORTF, 5, 1);
-	setupButton(BUTTON3, &PORTF, 6, 1);
-	setupButton(BUTTON4, &PORTF, 7, 1);
+	initButtons();
+	vTaskDelay(3000);
 	for(;;) {
-		if(getButtonState(BUTTON1, false) == buttonState_Short) {
+		updateButtons();
+		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
 			//Beispiel-Anwendung der Eventgroup um einen Tastendruck zu übermitteln.
 			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_TESTBUTTONPRESS);
 		}
-		if(getButtonState(BUTTON2, false) == buttonState_Short) {
+		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON3, false) == buttonState_Short) {
+		if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON4, false) == buttonState_Short) {
+		if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON1, true) == buttonState_Long) {
+		if(getButtonPress(BUTTON1) == LONG_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON2, true) == buttonState_Long) {
+		if(getButtonPress(BUTTON2) == LONG_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON3, true) == buttonState_Long) {
+		if(getButtonPress(BUTTON3) == LONG_PRESSED) {
 			
 		}
-		if(getButtonState(BUTTON4, true) == buttonState_Long) {
+		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
 			
 		}
 		vTaskDelay(10/portTICK_RATE_MS);
