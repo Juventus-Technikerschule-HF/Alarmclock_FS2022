@@ -40,6 +40,17 @@ void vInterfaceTask(void *pvParameters);
 //Eventgroup and Defines for Alarmclock
 #define ALARMCLOCK_COUNT1SECOND		0x01 << 0
 #define ALARMCLOCK_TESTBUTTONPRESS	0x01 << 1
+#define ALARMCLOCK_BUTTON1_SHORT	1 << 2
+#define ALARMCLOCK_BUTTON1_LONG		1 << 3
+#define ALARMCLOCK_BUTTON2_SHORT	1 << 4
+#define ALARMCLOCK_BUTTON2_LONG		1 << 5
+#define ALARMCLOCK_BUTTON3_SHORT	1 << 6
+#define ALARMCLOCK_BUTTON3_LONG		1 << 7
+#define ALARMCLOCK_BUTTON4_SHORT	1 << 8
+#define ALARMCLOCK_BUTTON4_LONG		1 << 9
+
+#define ALARMCLOCK_BUTTON_RESET		0x03FC
+
 EventGroupHandle_t egAlarmClock;
 
 //Time-Variables
@@ -72,9 +83,13 @@ int main(void)
 	return 0;
 }
 
+#define TIMESELECT_HOUR		1
+#define TIMESELECT_MINUTES	2
+#define TIMESELECT_SECONDS	3
 
 void vInterfaceTask(void *pvParameters) {
 	int mode = MODE_SHOWTIME;
+	int timeSelect = TIMESELECT_HOUR;
 	for(;;) {
 		switch(mode) {
 			case MODE_SHOWTIME:
@@ -82,12 +97,64 @@ void vInterfaceTask(void *pvParameters) {
 				vDisplayWriteStringAtPos(0,0,"Time:   %d:%d:%d", hours, minutes, seconds);
 				vDisplayWriteStringAtPos(1,0,"Alarm:  %d:%d:%d", alarm_hours, alarm_minutes, alarm_seconds);
 				vDisplayWriteStringAtPos(3,0,"Set-T Set-A EN-A --");
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON1_SHORT) > 0) {
+					mode = MODE_SETTIME;
+				}
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON2_SHORT) > 0) {
+					mode = MODE_SETALARM;
+				}
 			break;
 			case MODE_SETTIME:
-
+				vDisplayClear();
+				vDisplayWriteStringAtPos(0,0,"SetTime: %d:%d:%d", hours, minutes, seconds);
+				vDisplayWriteStringAtPos(3,0,"Sel Up Dwn back");
+				switch(timeSelect) {
+					case TIMESELECT_HOUR:
+						vDisplayWriteStringAtPos(2,0,"Hours");
+					break;
+					case TIMESELECT_MINUTES:
+						vDisplayWriteStringAtPos(2,0,"Minutes");
+					break;
+					case TIMESELECT_SECONDS:
+						vDisplayWriteStringAtPos(2,0,"Seconds");
+					break;
+				}
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON1_SHORT) > 0) {
+					if(timeSelect < TIMESELECT_SECONDS) {
+						timeSelect++;
+					} else {
+						timeSelect = TIMESELECT_HOUR;
+					}
+				}
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON2_SHORT) > 0) {
+					if(timeSelect == TIMESELECT_HOUR) {
+						hours++;
+					} else if(timeSelect == TIMESELECT_MINUTES) {
+						minutes++;
+					} else if (timeSelect == TIMESELECT_SECONDS) {
+						seconds++;
+					}
+				}
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON3_SHORT) > 0) {
+					if(timeSelect == TIMESELECT_HOUR) {
+						hours--;
+						} else if(timeSelect == TIMESELECT_MINUTES) {
+						minutes--;
+						} else if (timeSelect == TIMESELECT_SECONDS) {
+						seconds--;
+					}
+				}
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON4_SHORT) > 0) {
+					mode = MODE_SHOWTIME;
+				}
 			break;
 			case MODE_SETALARM:
-
+				vDisplayClear();	
+				vDisplayWriteStringAtPos(1,0,"SetAlarm: %d:%d:%d", alarm_hours, alarm_minutes, alarm_seconds);
+				vDisplayWriteStringAtPos(3,0,"Sel Up Dwn back");
+				if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_BUTTON4_SHORT) > 0) {
+					mode = MODE_SHOWTIME;
+				}
 			break;
 			case MODE_ALARMACTIVE:
 
@@ -96,47 +163,40 @@ void vInterfaceTask(void *pvParameters) {
 
 			break;
 		}
-		
-		if((xEventGroupGetBits(egAlarmClock) & ALARMCLOCK_TESTBUTTONPRESS)  == ALARMCLOCK_TESTBUTTONPRESS) {
-			//Ausgabe der Zeit wenn die Taste 1 gedrückt wird. Dies ist nur ein Beispiel für die Anwendung der EventGroup
-			vDisplayClear();
-			vDisplayWriteStringAtPos(0,0,"Time: %d:%d:%d", hours, minutes, seconds);
-			xEventGroupClearBits(egAlarmClock, ALARMCLOCK_TESTBUTTONPRESS);
-		}
-		
+
+		xEventGroupClearBits(egAlarmClock, ALARMCLOCK_BUTTON_RESET);
 		vTaskDelay(200/portTICK_RATE_MS);
 	}
 }
 
 void vButtonTask(void * pvParameters) {
 	initButtons();
-	vTaskDelay(3000);
+	///vTaskDelay(3000);
 	for(;;) {
 		updateButtons();
 		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
-			//Beispiel-Anwendung der Eventgroup um einen Tastendruck zu übermitteln.
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_TESTBUTTONPRESS);
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON1_SHORT);
 		}
 		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON2_SHORT);
 		}
 		if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON3_SHORT);
 		}
 		if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON4_SHORT);
 		}
 		if(getButtonPress(BUTTON1) == LONG_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON1_LONG);
 		}
 		if(getButtonPress(BUTTON2) == LONG_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON2_LONG);
 		}
 		if(getButtonPress(BUTTON3) == LONG_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON3_LONG);
 		}
 		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
-			
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON4_LONG);
 		}
 		vTaskDelay(10/portTICK_RATE_MS);
 	}
