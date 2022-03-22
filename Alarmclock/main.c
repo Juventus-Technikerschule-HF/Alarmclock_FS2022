@@ -24,7 +24,7 @@
 #include "utils.h"
 #include "errorHandler.h"
 #include "NHD0420Driver.h"
-#include "rtos_buttonhandler.h"
+#include "ButtonHandler.h"
 
 
 void vLedBlink(void *pvParameters);
@@ -36,15 +36,15 @@ void vInterfaceTask(void *pvParameters);
 //Eventgroup and Defines for Alarmclock
 #define ALARMCLOCK_COUNT1SECOND			1<<0
 #define ALARMCLOCK_ALARM_ON				1<<1
-#define ALARMCLOCK_BUTTON_S1_SHORT		1<<8
-#define ALARMCLOCK_BUTTON_S1_LONG		1<<9
-#define ALARMCLOCK_BUTTON_S2_SHORT		1<<10
-#define ALARMCLOCK_BUTTON_S2_LONG		1<<11
-#define ALARMCLOCK_BUTTON_S3_SHORT		1<<12
-#define ALARMCLOCK_BUTTON_S3_LONG		1<<13
-#define ALARMCLOCK_BUTTON_S4_SHORT		1<<14
-#define ALARMCLOCK_BUTTON_S4_LONG		1<<15
-#define ALARMCLOCK_BUTTON_ALL			0xFF00
+#define ALARMCLOCK_BUTTON1_SHORT		1 << 2
+#define ALARMCLOCK_BUTTON1_LONG			1 << 3
+#define ALARMCLOCK_BUTTON2_SHORT		1 << 4
+#define ALARMCLOCK_BUTTON2_LONG			1 << 5
+#define ALARMCLOCK_BUTTON3_SHORT		1 << 6
+#define ALARMCLOCK_BUTTON3_LONG			1 << 7
+#define ALARMCLOCK_BUTTON4_SHORT		1 << 8
+#define ALARMCLOCK_BUTTON4_LONG			1 << 9
+#define ALARMCLOCK_BUTTON_ALL			0x03FC
 EventGroupHandle_t egAlarmClock;
 
 #define POS_HOURS	0
@@ -92,10 +92,10 @@ int main(void)
 	
 	egAlarmClock = xEventGroupCreate();
 	
-	xTaskCreate(vLedBlink, (const char *) "ledBlink", configMINIMAL_STACK_SIZE+10, NULL, 1, NULL);
-	xTaskCreate(vTime, (const char *) "timeTask", configMINIMAL_STACK_SIZE, NULL, 3, NULL);
-	xTaskCreate(vButtonTask, (const char *) "buttonTask", configMINIMAL_STACK_SIZE+50, NULL, 2, NULL);
-	xTaskCreate(vInterfaceTask, (const char *) "uiTask", configMINIMAL_STACK_SIZE + 200, NULL, 2, NULL);
+	xTaskCreate(vLedBlink, (const char *) "ledBlink", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(vTime, (const char *) "timeTask", configMINIMAL_STACK_SIZE+10, NULL, 3, NULL);
+	xTaskCreate(vInterfaceTask, (const char *) "uiTask", configMINIMAL_STACK_SIZE + 10, NULL, 2, NULL);
+	xTaskCreate(vButtonTask, (const char *) "buttonTask", configMINIMAL_STACK_SIZE+10, NULL, 3, NULL);
 	
 	vTaskStartScheduler();
 	return 0;
@@ -125,21 +125,21 @@ void vInterfaceTask(void *pvParameters) {
 				} else {
 				vDisplayWriteStringAtPos(3,0,"__ - OFF - ALR - CLK");
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S4_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON4_LONG) {
 				menuMode = MENU_SETCLOCK;
 				xEventGroupClearBits(egAlarmClock, ALARMCLOCK_ALARM_ON);
 				selector = 0;
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S3_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON3_LONG) {
 				menuMode = MENU_SETALARM;
 				xEventGroupClearBits(egAlarmClock, ALARMCLOCK_ALARM_ON);
 				selector = 0;
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S1_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON1_LONG) {
 				alarmState = 1;
 				xEventGroupClearBits(egAlarmClock, ALARMCLOCK_ALARM_ON);
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S2_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON2_LONG) {
 				alarmState = 0;
 				xEventGroupClearBits(egAlarmClock, ALARMCLOCK_ALARM_ON);
 			}
@@ -151,19 +151,19 @@ void vInterfaceTask(void *pvParameters) {
 			drawTime();
 			drawPointer(2,selector);
 			vDisplayWriteStringAtPos(3,0,"UP - DWN - NEX - BAK");
-			if(buttonstate & ALARMCLOCK_BUTTON_S1_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON1_SHORT) {
 				changeValue(VALUETYPE_CLOCK, selector, 1);
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S2_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON2_SHORT) {
 				changeValue(VALUETYPE_CLOCK, selector, -1);
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S3_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON3_SHORT) {
 				selector++;
 				if(selector > POS_SECONDS) {
 					selector = POS_HOURS;
 				}
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S4_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON4_LONG) {
 				menuMode = MENU_MAINSCREEN;
 			}
 			break;
@@ -171,19 +171,19 @@ void vInterfaceTask(void *pvParameters) {
 			drawAlarm();
 			drawPointer(1,selector);
 			vDisplayWriteStringAtPos(3,0,"UP - DWN - NEX - BAK");
-			if(buttonstate & ALARMCLOCK_BUTTON_S1_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON1_SHORT) {
 				changeValue(VALUETYPE_ALARM, selector, 1);
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S2_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON2_SHORT) {
 				changeValue(VALUETYPE_ALARM, selector, -1);
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S3_SHORT) {
+			if(buttonstate & ALARMCLOCK_BUTTON3_SHORT) {
 				selector++;
 				if(selector > POS_SECONDS) {
 					selector = POS_HOURS;
 				}
 			}
-			if(buttonstate & ALARMCLOCK_BUTTON_S4_LONG) {
+			if(buttonstate & ALARMCLOCK_BUTTON4_LONG) {
 				menuMode = MENU_MAINSCREEN;
 			}
 			break;
@@ -198,35 +198,32 @@ void vInterfaceTask(void *pvParameters) {
 }
 
 void vButtonTask(void * pvParameters) {
-	initButtonHandler();
-	setupButton(BUTTON1, &PORTF, 4, 1);
-	setupButton(BUTTON2, &PORTF, 5, 1);
-	setupButton(BUTTON3, &PORTF, 6, 1);
-	setupButton(BUTTON4, &PORTF, 7, 1);
+	initButtons();
 	for(;;) {
-		if(getButtonState(BUTTON1, false) == buttonState_Short) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S1_SHORT);
+		updateButtons();
+		if(getButtonPress(BUTTON1) == SHORT_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON1_SHORT);
 		}
-		if(getButtonState(BUTTON2, false) == buttonState_Short) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S2_SHORT);
+		if(getButtonPress(BUTTON2) == SHORT_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON2_SHORT);
 		}
-		if(getButtonState(BUTTON3, false) == buttonState_Short) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S3_SHORT);
+		if(getButtonPress(BUTTON3) == SHORT_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON3_SHORT);
 		}
-		if(getButtonState(BUTTON4, false) == buttonState_Short) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S4_SHORT);
+		if(getButtonPress(BUTTON4) == SHORT_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON4_SHORT);
 		}
-		if(getButtonState(BUTTON1, true) == buttonState_Long) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S1_LONG);
+		if(getButtonPress(BUTTON1) == LONG_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON1_LONG);
 		}
-		if(getButtonState(BUTTON2, true) == buttonState_Long) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S2_LONG);
+		if(getButtonPress(BUTTON2) == LONG_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON2_LONG);
 		}
-		if(getButtonState(BUTTON3, true) == buttonState_Long) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S3_LONG);
+		if(getButtonPress(BUTTON3) == LONG_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON3_LONG);
 		}
-		if(getButtonState(BUTTON4, true) == buttonState_Long) {
-			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON_S4_LONG);
+		if(getButtonPress(BUTTON4) == LONG_PRESSED) {
+			xEventGroupSetBits(egAlarmClock, ALARMCLOCK_BUTTON4_LONG);
 		}
 		vTaskDelay(10/portTICK_RATE_MS);
 	}

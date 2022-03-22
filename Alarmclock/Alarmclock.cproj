@@ -28,15 +28,15 @@
     <eraseonlaunchrule>0</eraseonlaunchrule>
     <AsfFrameworkConfig>
       <framework-data>
-        <options />
-        <configurations />
-        <files />
-        <documentation help="" />
-        <offline-documentation help="" />
-        <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.25.0" />
-        </dependencies>
-      </framework-data>
+  <options />
+  <configurations />
+  <files />
+  <documentation help="" />
+  <offline-documentation help="" />
+  <dependencies>
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.34.1" />
+  </dependencies>
+</framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.edbg</avrtool>
     <avrtoolserialnumber>ATMLEDBGC04201100001</avrtoolserialnumber>
@@ -155,6 +155,9 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ButtonHandler.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="driver\clksys_driver.c">
       <SubType>compile</SubType>
     </Compile>
@@ -266,6 +269,9 @@
     <Compile Include="includes\avr_compiler.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="includes\ButtonHandler.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="includes\errorHandler.h">
       <SubType>compile</SubType>
     </Compile>
@@ -281,9 +287,6 @@
     <Compile Include="includes\NHD0420Driver.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="includes\rtos_buttonhandler.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="includes\utils.h">
       <SubType>compile</SubType>
     </Compile>
@@ -297,9 +300,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="NHD0420Driver.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="rtos_buttonhandler.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="utils.c">
